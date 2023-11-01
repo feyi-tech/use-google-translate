@@ -1,0 +1,74 @@
+{
+    "name": "use-google-translate",
+    "version": "1.0.6",
+    "description": "A library to translate your react app in a clean, easy, and reliable manner.",
+    "main": "dist/index.js",
+    "module": "dist/index.es.js",
+    "types": "dist/index.d.ts",
+    "jsnext:main": "dist/index.es.js",
+    "files": [
+        "dist",
+        "README.md",
+        "package.json"
+    ],
+    "engines": {
+        "node": ">=8",
+        "npm": ">=5"
+    },
+    "scripts": {
+        "test": "cross-env CI=1 react-scripts test --env=jsdom",
+        "test:watch": "react-scripts test --env=jsdom",
+        "build": "rollup -c && tsc -d --emitDeclarationOnly --noEmit false --declarationDir dist",
+        "start": "rollup -c -w",
+        "prepare": "npm run build",
+        "predeploy": "cd example && npm install && npm run build",
+        "deploy": "gh-pages -d example/build"
+    },
+    "author": "Feyijinmi Adegoke Elijah",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/feyi-tech/use-google-translate.git"
+    },
+    "bugs": {
+        "url": "https://github.com/feyi-tech/use-google-translate/issues"
+    },
+    "homepage": "https://github.com/feyi-tech/use-google-translate#readme",
+    "keywords": [
+        "React",
+        "Hook",
+        "Google",
+        "Translate",
+        "Google Translate Hook",
+        "Use Google Translate"
+    ],
+    "peerDependencies": {
+        "react": ">=16.8.0"
+    },
+    "dependencies": {
+        "country-language": "^0.1.7",
+        "jquery": "^3.7.1",
+        "js-cookie": "^3.0.5"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.2.2",
+        "@babel/runtime": "^7.3.1",
+        "@rollup/plugin-babel": "^5.2.0",
+        "@rollup/plugin-commonjs": "^15.0.0",
+        "@rollup/plugin-node-resolve": "^9.0.0",
+        "@rollup/plugin-typescript": "^5.0.2",
+        "@rollup/plugin-url": "^5.0.1",
+        "@testing-library/react-hooks": "^3.2.1",
+        "@types/jest": "^23.3.13",
+        "@types/react": "^16.7.22",
+        "cross-env": "^5.2.0",
+        "gh-pages": "^2.0.1",
+        "react": "^16.8.0",
+        "react-scripts": "^3.4.0",
+        "react-test-renderer": "^16.8.0",
+        "rollup": "^2.26.9",
+        "rollup-plugin-peer-deps-external": "^2.2.0",
+        "tslib": "^2.0.1",
+        "typescript": "^5.2.2"
+    }
+}
