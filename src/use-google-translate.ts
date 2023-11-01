@@ -126,97 +126,115 @@ const useGoogleTranslate = (
         }
     }
 
+    const triggerTranslate = () => {
+        $.ajax({
+            type: "GET",
+            url: `${location.protocol}//geolocation-db.com/jsonp/`,
+            jsonpCallback: "callback",
+            dataType: "jsonp",
+            success: function( location: any ) {
+                //$('#country').html(location.country_code);
+                var co = location.country_code;
+                co = co.toUpperCase();
+                Cookies.set('detected_country_code', co);
+                setDetectedCountryCode(co);
+                console.info(`${LIB_NAME}: Detected country  => ${co}`)
+                CountryLanguage.getCountryLanguages(co, function (err: string, languages: any[]) {
+                    if (err || !languages || languages.length == 0) {
+                        if(err) {
+                            console.warn(`${LIB_NAME}: Failed to get detected locale  => `, err)
+                        } else {
+                            console.warn(`${LIB_NAME}: No detected locale returned`)
+                        }
+                        init(null)
+
+                    } else {
+                        try {
+                            var locale = languages[0]?.iso639_1.split("-")[0].toLowerCase()
+                            if(locale) {
+                                Cookies.set('detected_country_locale', locale);
+                                setDetectedCountryLanguage(locale)
+
+                                console.warn(`${LIB_NAME}: Detected locale is empty from this languages => `, languages)
+                            } else {
+                                console.info(`${LIB_NAME}: Detected locale  => ${locale}`)
+                            }
+                            
+                            init(locale)
+
+                        } catch(e: any) {
+                            console.warn(`${LIB_NAME}: Failed to extract detected locale  => ${e.message}`)
+                            init(null)
+                        }
+                    }
+                });
+            },
+            error: (e: any) => {
+                console.warn(`${LIB_NAME}: Failed to get detected country  => `, e)
+                init(null)
+            }
+        });
+    }
+
     const [scriptLoaded, setScriptLoaded] = useState<boolean>()
     useEffect(() => {
         if(!scriptLoaded) {
             setTranslating(true)
             setScriptLoaded(true)
-            const styleContent = `
-            #goog-gt-tt, iframe.VIpgJd-ZVi9od-ORHb-OEVmcd, .VIpgJd-ZVi9od-aZ2wEe-wOHMyf {display: none !important; height: 0px !important;}
-            body {top: 0px !important}
-            `
-            addStyleWithContent(styleContent)
 
-            // Create the HTML element you want to prepend
-            const elementToPrepend = document.createElement('div');
-            elementToPrepend.id = "google_translate_element"
-            elementToPrepend.setAttribute("style", "display:none !important;")
-            // Get a reference to the <body> element
-            const body = document.body;
+            const scriptCallback = "googleTranslateElementInit"
+            const scriptSrc = `${location.protocol}//translate.google.com/translate_a/element.js?cb=${scriptCallback}`
+            //get the google translate script if alreay loaded to the page
+            const script = document.querySelector(`script[src='${scriptSrc}']`)
 
-            // Prepend the element to the <body>
-            body.insertBefore(elementToPrepend, body.firstChild);
+            //If the script is already in the page, don't load anoter. 
+            // Just render future texts if not already in the page and trigger translation.
+            if(script) {
+                renderTranslationHiddenTexts()
+                triggerTranslate()
 
-            renderTranslationHiddenTexts()
-            const callbackName = `googleTranslateElementInit${Math.round(Math.random() * 100000)}`
-            const scriptContent = `
-            function ${callbackName}() {
-                new google.translate.TranslateElement({pageLanguage: '${defaultLang}', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+            } //If the script is not loaded yet, load the script and allother settups
+            else {
+                const styleContent = `
+                #goog-gt-tt, iframe.VIpgJd-ZVi9od-ORHb-OEVmcd, .VIpgJd-ZVi9od-aZ2wEe-wOHMyf {display: none !important; height: 0px !important;}
+                body {top: 0px !important}
+                `
+                addStyleWithContent(styleContent)
+
+                // Create the HTML element you want to prepend
+                const elementToPrepend = document.createElement('div');
+                elementToPrepend.id = "google_translate_element"
+                elementToPrepend.setAttribute("style", "display:none !important;")
+                // Get a reference to the <body> element
+                const body = document.body;
+
+                // Prepend the element to the <body>
+                body.insertBefore(elementToPrepend, body.firstChild);
+
+                renderTranslationHiddenTexts()
+                const scriptContent = `
+                function ${scriptCallback}() {
+                    new google.translate.TranslateElement({pageLanguage: '${defaultLang}', layout: google.translate.TranslateElement.InlineLayout.SIMPLE}, 'google_translate_element');
+                }
+                `;
+                addScriptWithContent(scriptContent)
+                loadScript(scriptSrc)
+                .then(() => {
+                    triggerTranslate()
+                })
+                .catch(e => {
+                    console.error(`${LIB_NAME}: Google translate script load error => ${e.message}`)
+                    setScriptLoaded(false)
+                    setTranslating(false)
+                })
             }
-            `;
-            addScriptWithContent(scriptContent)
-            loadScript(`${location.protocol}//translate.google.com/translate_a/element.js?cb=${callbackName}`)
-            .then(() => {
-                $.ajax({
-                    type: "GET",
-                    url: `${location.protocol}//geolocation-db.com/jsonp/`,
-                    jsonpCallback: "callback",
-                    dataType: "jsonp",
-                    success: function( location: any ) {
-                        //$('#country').html(location.country_code);
-                        var co = location.country_code;
-                        co = co.toUpperCase();
-                        Cookies.set('detected_country_code', co);
-                        setDetectedCountryCode(co);
-                        console.info(`${LIB_NAME}: Detected country  => ${co}`)
-                        CountryLanguage.getCountryLanguages(co, function (err: string, languages: any[]) {
-                            if (err || !languages || languages.length == 0) {
-                                if(err) {
-                                    console.warn(`${LIB_NAME}: Failed to get detected locale  => `, err)
-                                } else {
-                                    console.warn(`${LIB_NAME}: No detected locale returned`)
-                                }
-                                init(null)
-    
-                            } else {
-                                try {
-                                    var locale = languages[0]?.iso639_1.split("-")[0].toLowerCase()
-                                    if(locale) {
-                                        Cookies.set('detected_country_locale', locale);
-                                        setDetectedCountryLanguage(locale)
-
-                                        console.warn(`${LIB_NAME}: Detected locale is empty from this languages => `, languages)
-                                    } else {
-                                        console.info(`${LIB_NAME}: Detected locale  => ${locale}`)
-                                    }
-                                    
-                                    init(locale)
-    
-                                } catch(e: any) {
-                                    console.warn(`${LIB_NAME}: Failed to extract detected locale  => ${e.message}`)
-                                    init(null)
-                                }
-                            }
-                        });
-                    },
-                    error: (e: any) => {
-                        console.warn(`${LIB_NAME}: Failed to get detected country  => `, e)
-                        init(null)
-                    }
-                });
-            })
-            .catch(e => {
-                console.error(`${LIB_NAME}: Google translate script load error => ${e.message}`)
-                setScriptLoaded(false)
-                setTranslating(false)
-            })
         }
     }, [])
 
     const textToId = (text: string) => {
         if (!text) return "";
     
-        // Replace all non-alphanumeric characters (excluding underscores) with an empty string
+        // Replace all non-alphanumeric characters (excluding underscores and white space) with an empty string
         const cleanText = text.replace(/[^a-zA-Z0-9_\s]/g, "");
     
         // Replace all whitespace characters with underscores
@@ -226,16 +244,20 @@ const useGoogleTranslate = (
     };    
 
     const renderTranslationHiddenTexts = (): any => {
-        const content = `
-        ${
-            futureTexts.map((futureText) => `
-                <div id="${FUTURE_TEXTS_PREFIX}${typeof futureText !== 'string'? futureText.id : textToId(futureText as string)}">
+        //Making sure the hidden texts are not added more than once
+        const content = `${
+            futureTexts.map((futureText) => {
+                const id = `${FUTURE_TEXTS_PREFIX}${typeof futureText !== 'string'? futureText.id : textToId(futureText as string)}`
+                if(document.querySelector(`div#${id}`)) {
+                    return ''
+                }
+                return `<div id="${id}">
                         ${typeof futureText !== "string"? futureText.text : futureText}
                 </div>`
-            )
+            })
         }
-        <div id="${TRANSLATION_COMPLETE_ELEMENT_ID}">${defaultLangLoadCompleteCheckerText}</div>`
-        appendHtmlContentToBody(content)
+        ${!document.querySelector(`div#${TRANSLATION_COMPLETE_ELEMENT_ID}`)? `<div id="${TRANSLATION_COMPLETE_ELEMENT_ID}">${defaultLangLoadCompleteCheckerText}</div>` : ''}`
+        if(content.replace(/[,]+/, '').trim().length > 0) appendHtmlContentToBody(content.replace(/[,]+/, '').trim())
     }
 
     const getTranslationFutureText = (futureTextId: string): string => {
