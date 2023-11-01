@@ -34,7 +34,6 @@ import useGoogleTranslate from 'use-google-translate';
 
 
 export default function Example() {
-    import useGoogleTranslate from 'use-google-translate';
 
 
     const supportedLanguages = {
