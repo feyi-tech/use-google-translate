@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 const Cookies = require('js-cookie');
 import { FutureText, GoogleLanguage, UseGoogleTranslateReturn } from "./types";
-import { addScriptWithContent, appendHtmlContentToBody, loadScript } from "./utils";
+import { addScriptWithContent, addStyleWithContent, appendHtmlContentToBody, loadScript } from "./utils";
 const CountryLanguage = require('country-language');
 const $ = require("jquery")
 
@@ -125,9 +125,14 @@ const useGoogleTranslate = (
     const [scriptLoaded, setScriptLoaded] = useState<boolean>()
     useEffect(() => {
         if(!scriptLoaded) {
-            renderTranslationHiddenTexts()
             setTranslating(true)
             setScriptLoaded(true)
+            const styleContent = `
+            .goog-te-gadget, #goog-gt-tt, iframe.VIpgJd-ZVi9od-ORHb-OEVmcd, .VIpgJd-ZVi9od-aZ2wEe-wOHMyf {display: none !important; height: 0px !important;}
+            body {top: 0px !important}
+            `
+            addStyleWithContent(styleContent)
+            renderTranslationHiddenTexts()
             const callbackName = `googleTranslateElementInit${Math.round(Math.random() * 100000)}`
             const scriptContent = `
             function ${callbackName}() {

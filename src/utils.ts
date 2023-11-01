@@ -31,6 +31,16 @@ export function addScriptWithContent(scriptContent: string) {
     // Append the script to the document's head
     document.head.appendChild(script);
 }
+export function addStyleWithContent(styleContent: string) {
+    // Create a style element
+    const style = document.createElement('style');
+    
+    // Set the style content
+    style.textContent = styleContent;
+  
+    // Append the style element to the document's head
+    document.head.appendChild(style);
+}
 
 export function appendHtmlContentToBody(htmlContent: string) {
     const div = document.createElement('div');
