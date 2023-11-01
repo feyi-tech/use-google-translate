@@ -7,12 +7,12 @@ const $ = require("jquery")
 
 const FUTURE_TEXTS_PREFIX = "google_translation_future_text_"
 const TRANSLATION_COMPLETE_ELEMENT_ID = "google_translation_complete_el"
-
+const LIB_NAME = "use-google-translate"
 const useGoogleTranslate = (
     langs: { [code: string]: GoogleLanguage }, defaultLang: string, defaultLangLoadCompleteCheckerText: string, 
     futureTexts: (FutureText | string)[] = [],
     mustTranslate: boolean = true,
-    translationTimeout: number = 5000,//5 seconds
+    translationTimeout: number = 5000//5 seconds
 ): UseGoogleTranslateReturn => {
     const [translating, setTranslating] = useState<boolean>(true)
     const [lang, setLang] = useState<string>(defaultLang)
@@ -25,16 +25,21 @@ const useGoogleTranslate = (
         var userCurrentLocale = Cookies.get('language');
         //Get the google translate set current translation cookie
         const googt = Cookies.get("googtrans")
-        //If the user's latest language is not empty, and it's different from the current one; thus signifying a change,
+        const latestTransCode = `/${defaultLang}/${userLatestLocale}`
+        const latestHash = `googtrans(${defaultLang}|${userLatestLocale})`
+        //If the user's latest language is not empty, and it's different from the current one; 
+        // or the latest translation code is different from the one set as cookies, probably due to outside cookies
+        // manipulation in the browser, and the hash in the url is not already set to the hash of the latest language,
+        // thus signifying a change,
         // and it's not the default language;
         // 1. update the user's current locale to the latest, and
         // 2. add the translation trigger hash to the url, and reload with the hash
         if(userLatestLocale && userLatestLocale.length > 0 && 
-            (userLatestLocale != userCurrentLocale) && 
+            (userLatestLocale != userCurrentLocale || (googt != latestTransCode && location.hash != `#${latestHash}`)) && 
             userLatestLocale != defaultLang
         ){
             Cookies.set('language', userLatestLocale);
-            window.location.hash = 'googtrans(en|' + userLatestLocale + ')';
+            window.location.hash = latestHash;
             location.reload();
 
         } //If the latest user locale is the default, 
@@ -110,7 +115,6 @@ const useGoogleTranslate = (
         //If the user has a valid language set prefencially or defaultly already.
         // Just make sure the detected_country_code is set and translate to the set language
         if(lang && Object.keys(langs).includes(lang)) {
-            setLang(lang)
             translatePage(lang);
 
         } //If the user has no valid language set already.
@@ -128,10 +132,21 @@ const useGoogleTranslate = (
             setTranslating(true)
             setScriptLoaded(true)
             const styleContent = `
-            .goog-te-gadget, #goog-gt-tt, iframe.VIpgJd-ZVi9od-ORHb-OEVmcd, .VIpgJd-ZVi9od-aZ2wEe-wOHMyf {display: none !important; height: 0px !important;}
+            #goog-gt-tt, iframe.VIpgJd-ZVi9od-ORHb-OEVmcd, .VIpgJd-ZVi9od-aZ2wEe-wOHMyf {display: none !important; height: 0px !important;}
             body {top: 0px !important}
             `
             addStyleWithContent(styleContent)
+
+            // Create the HTML element you want to prepend
+            const elementToPrepend = document.createElement('div');
+            elementToPrepend.id = "google_translate_element"
+            elementToPrepend.setAttribute("style", "display:none !important;")
+            // Get a reference to the <body> element
+            const body = document.body;
+
+            // Prepend the element to the <body>
+            body.insertBefore(elementToPrepend, body.firstChild);
+
             renderTranslationHiddenTexts()
             const callbackName = `googleTranslateElementInit${Math.round(Math.random() * 100000)}`
             const scriptContent = `
@@ -140,11 +155,11 @@ const useGoogleTranslate = (
             }
             `;
             addScriptWithContent(scriptContent)
-            loadScript(`http://translate.google.com/translate_a/element.js?cb=${callbackName}`)
+            loadScript(`${location.protocol}//translate.google.com/translate_a/element.js?cb=${callbackName}`)
             .then(() => {
                 $.ajax({
                     type: "GET",
-                    url: "https://geolocation-db.com/jsonp/",
+                    url: `${location.protocol}//geolocation-db.com/jsonp/`,
                     jsonpCallback: "callback",
                     dataType: "jsonp",
                     success: function( location: any ) {
@@ -153,8 +168,14 @@ const useGoogleTranslate = (
                         co = co.toUpperCase();
                         Cookies.set('detected_country_code', co);
                         setDetectedCountryCode(co);
+                        console.info(`${LIB_NAME}: Detected country  => ${co}`)
                         CountryLanguage.getCountryLanguages(co, function (err: string, languages: any[]) {
                             if (err || !languages || languages.length == 0) {
+                                if(err) {
+                                    console.warn(`${LIB_NAME}: Failed to get detected locale  => `, err)
+                                } else {
+                                    console.warn(`${LIB_NAME}: No detected locale returned`)
+                                }
                                 init(null)
     
                             } else {
@@ -163,22 +184,29 @@ const useGoogleTranslate = (
                                     if(locale) {
                                         Cookies.set('detected_country_locale', locale);
                                         setDetectedCountryLanguage(locale)
+
+                                        console.warn(`${LIB_NAME}: Detected locale is empty from this languages => `, languages)
+                                    } else {
+                                        console.info(`${LIB_NAME}: Detected locale  => ${locale}`)
                                     }
+                                    
                                     init(locale)
     
-                                } catch(e) {
+                                } catch(e: any) {
+                                    console.warn(`${LIB_NAME}: Failed to extract detected locale  => ${e.message}`)
                                     init(null)
                                 }
                             }
                         });
                     },
-                    error: () => {
+                    error: (e: any) => {
+                        console.warn(`${LIB_NAME}: Failed to get detected country  => `, e)
                         init(null)
                     }
                 });
             })
             .catch(e => {
-                console.error("user-google-translate: Google translate script load error: " + e.message)
+                console.error(`${LIB_NAME}: Google translate script load error => ${e.message}`)
                 setScriptLoaded(false)
                 setTranslating(false)
             })

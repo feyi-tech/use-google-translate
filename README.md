@@ -95,7 +95,7 @@ export default function Example() {
         // IF false, the translating state of will be set to false with no translation done.
         mustTranslate, // the default is true
 
-        6000, // The translation process timeout in milliseconds. The default is 5000. That is, 5 seconds.
+        6000 // The translation process timeout in milliseconds. The default is 5000. That is, 5 seconds.
     );
 
     const handleAlert1 = () => {

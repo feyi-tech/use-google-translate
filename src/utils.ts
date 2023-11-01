@@ -14,7 +14,7 @@ export function loadScript(scriptSrc: string) {
         }
     
         // Append the script to the document
-        document.head.appendChild(script);
+        document.body.appendChild(script);
     })
 }
 
@@ -29,7 +29,7 @@ export function addScriptWithContent(scriptContent: string) {
     script.text = scriptContent;
   
     // Append the script to the document's head
-    document.head.appendChild(script);
+    document.body.appendChild(script);
 }
 export function addStyleWithContent(styleContent: string) {
     // Create a style element
