@@ -1,6 +1,6 @@
 {
     "name": "use-google-translate",
-    "version": "1.0.20",
+    "version": "1.0.23",
     "description": "A library to translate your react app in a clean, easy, and reliable manner.",
     "main": "dist/index.js",
     "module": "dist/index.es.js",

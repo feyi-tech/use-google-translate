@@ -66,15 +66,16 @@ export default function Example() {
     const mustTranslate = true
 
     const {
-    lang,//current preferred, detected, or default language
     langs,//supportedLanguages
-    isRTL,
-    detectedCountryCode,
-    supportsLanguage,
-    getLanguageData,
-    getTranslationFutureText,
-    translate,
-    translating,
+    lang,//current preferred, detected, or default language, e.g en, es, ar...
+    isRTL,//true if "lang" is a right-to-left language, else false. Determined from the supported language passed.
+    detectedCountryCode,//the country of the user
+    detectedCountryLanguage,//the language of the user based on the user country
+    supportsLanguage,//a method that takes a locale/language and returns true if it's in the supported list 
+    getLanguageData,//a method that takes a locale/language and returns the object of the supported language, or null
+    getTranslationFutureText,//a method that takes a text id or text and returns its translated version.
+    translate,//a method that takes a locale and translate the page to the locale passed
+    translating,//returns true if translation has not completed, else false
     } = useGoogleTranslate(
         supportedLanguages, // *Required. The languages the translator should support
 
@@ -92,7 +93,7 @@ export default function Example() {
         futureTexts, 
 
         // If set to true, the page will reload when the translation has timed out without any translation done.
-        // IF false, the translating state of will be set to false with no translation done.
+        // IF false, the translating state will be set to false with no translation done.
         mustTranslate, // the default is true
 
         6000 // The translation process timeout in milliseconds. The default is 5000. That is, 5 seconds.
@@ -109,8 +110,10 @@ export default function Example() {
     return (
         <div>
             <div style={{display: translating? "none" : "block"}}>
+                <div className="notranslate">ExampleSiteName</div>
+                
                 <h1>This is a test content for translation.</h1>
-                <div>Current language: {lang}</div>
+                <div>Current language: <span className="notranslate">{lang}</span></div>
                 <select onChange={(e) => {
                     translate(e.value)
                 }}>
